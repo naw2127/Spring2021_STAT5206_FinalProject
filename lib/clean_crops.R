@@ -60,6 +60,7 @@ g1 <- ggplot(state_stats_df, aes(x=year, y=state_avg))+
   theme(legend.position = 'bottom')
 
 g1
+ggsave(path = "./figs", filename = "fig1.png")
 
 ## ---------------------------
 ## Function to select and rename desired columns
