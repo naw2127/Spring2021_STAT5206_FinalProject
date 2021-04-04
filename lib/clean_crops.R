@@ -26,108 +26,64 @@ setwd(natalie_wd)     # Natalie's working directory (mac)
 library(tidyverse)
 
 ## ---------------------------
-## Read in crop yield data with format "./data/NASS_XX_2000_2020_CY.csv"
-## where XX is the state code. 
-file_names <- list.files(path = "./data", pattern='*\\_2000_2020_CY.csv')
-
-# use paste to add "./data/ to each name 
-file_paths <- paste("./data/", sep = "", file_names)
-
-# apply read_csv to every item in list
-state_csv <- lapply(file_paths, read_csv)
-
-## ---------------------------
-## Clean data & put into one Dataframe
-state_stats_list <- lapply(lapply(state_csv, cln_dat), state_stats)
-
-# Make one data frame of all states info
-state_stats_df <- as.data.frame(do.call(rbind, state_stats_list))
-
-head(state_stats_df)
-write.csv(state_stats_df, file= "./output/state_crop_yields.csv")
-
-## ---------------------------
-## Make graph
-g1 <- ggplot(state_stats_df, aes(x=year, y=state_avg))+
-  geom_point(aes(color=state))+
-  geom_smooth(aes(color=state))+
-  labs(
-    title = str_wrap("How have the crop yields of US States changed since 2000?", width=40),
-    x= "Year",
-    y= "Corn Bushels per Acre"
-  )+
-  theme_classic()+
-  theme(legend.position = 'bottom')
-
-g1
-ggsave(path = "./figs", filename = "fig1.png")
-
-## ---------------------------
 ## Function to select and rename desired columns
 cln_dat <- function(raw_data){
   cleaned_data <- raw_data %>%
     select(Year, State, County, "Data Item", Value, "CV (%)")%>%
     rename("year" = "Year", "state"="State", "county"="County", 
            "data_item"= "Data Item", "value"="Value", "cv" = "CV (%)")
-  
   return(cleaned_data)
 }
 
 ## Function to get state statistics
+## Make state regions
+
+states <- unique(midwest$State)
+north <- c("IDAHO","MINNESOTA","MONTANA", "NORTH DAKOTA",
+           "SOUTH DAKOTA", "WISCONSIN")
+south <- c("ARKANSAS","ILLINOIS", "INDIANA", "IOWA", "KANSAS",
+           "KENTUCKY", "MISSOURI", "NEBRASKA", "OKLAHOMA",
+           "TENNESSEE", "TEXAS")
+
 state_stats <- function(cln_dat){
+  # get state stats 
   state_stats <- cln_dat %>%
     group_by(year, state)%>%
     summarize(
-      state_avg = mean(value),
-      state_max = max(value),
-      state_min = min(value),
-      best_county = county[which.max(value)],
-      worst_county = county[which.min(value)]
+      avg = mean(value),
+      max = max(value),
+      min = min(value)
+    )%>%
+    mutate(
+      region = case_when(
+        state %in% north ~ "north",
+        state %in% south ~ "south"
+      )
     )
+  # get national average of each year
+  nat_stats <- state_stats%>%
+    group_by(year)%>%
+    summarize(
+      nat_avg = mean(avg) 
+    )
+  
+  # once national trends are known, get % diff from national avg 
+  state_stats <- merge(state_stats, nat_stats) %>%
+    mutate(
+      pct_diff = (avg - nat_avg)/ nat_avg
+    )
+  
   return(state_stats)
 }
-
 ## ---------------------------
-## DEMO 
-# Iowa
-# FROM URL=https://quickstats.nass.usda.gov/results/6100C076-DF33-3555-A8BA-CF8D964BEB79
-ia_crop_yields <- read_csv("./data/NASS_IA_2000_2020_CY.csv")
-print(demo, n=10)
+## IF READING IN DATASET OF ALL STATES  ((PREFERRED))
+## Clean Dataset of all midwest states from 1975-2020
+midwest1 <- read_csv("./data/NASS_Ar_Kn_1975_2020_CY.csv")  # had to break it up
+midwest2 <- read_csv("./data/NASS_Mn_ws_1975_2020_CY.csv")  # to download
+midwest <- rbind(midwest1, midwest2)                        # recombine
+cln_midwest <- cln_dat(midwest)
 
-# Oklahoma
-# FROM URL=https://quickstats.nass.usda.gov/results/92330E53-1F13-35AE-8371-B58EDB3C6D17
-ok_crop_yields <- read_csv("./data/NASS_OK_2000_2020_CY.csv")
-print(ok_crop_yields, n=5)
+midwest_stats <- state_stats(cln_midwest)
 
-# North Dakota
-# FROM URL=https://quickstats.nass.usda.gov/results/C5917E5F-9E13-3C7C-A59F-7EAE7C961C62
-nd_crop_yields <- read_csv("./data/NASS_ND_2000_2020_CY.csv")
-
-## ---------------------------
-# Extract data from loaded csv files
-
-ok_stats <- state_stats(cln_dat(ok_crop_yields))
-
-ia_stats <- state_stats(cln_dat(ia_crop_yields))
-
-nd_stats <- state_stats(cln_dat(nd_crop_yields))
-
-ok_ia_nd <-rbind(ok_stats, ia_stats, nd_stats)
-
-
-print(ok_ia_nd, n=4)
-## ---------------------------
-# Make plot
-g1 <- ggplot(ok_ia_nd, aes(x=year, y=state_avg))+
-  geom_point(aes(color=state))+
-  geom_smooth(aes(color=state))+
-  labs(
-    title = str_wrap("How have the crop yields of Three US States changed since 2000?", width=40),
-    x= "Year",
-    y= "Corn Bushels per Acre"
-  )+
-  theme_classic()+
-  theme(legend.position = 'bottom')
-
-g1
-
+head(midwest_stats, 5)
+write.csv(midwest_stats, file= "./output/midwest_crop_yields.csv")
