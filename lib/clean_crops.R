@@ -18,7 +18,7 @@
 
 ## set working directory 
 natalie_wd <- "~/SENIOR YEAR/Stat comp and intro to data science/Final Project/Spring2021_STAT5206_FinalProject"
-setwd(natalie_wd)     # Natalie's working directory (mac)
+setwd(natalie_wd)     # Natalie's working directory (pc)
 
 ## ---------------------------
 

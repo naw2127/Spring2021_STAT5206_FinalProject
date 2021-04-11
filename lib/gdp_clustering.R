@@ -100,6 +100,18 @@ NAICS_stats <- state_stats(NAICS_Perc)
 NAICS_stats %>% select(year, state, avg_perc) %>%
   pivot_wider(names_from = year, values_from = avg_perc) -> clust_dat
 
+## ---------------------
+## Write cleaned/ analysed data to ./output/
+
+write.csv(NAICS_stats, file= "./output/NAICS_stats.csv")
+
+write.csv(SIC_stats, file= "./output/SIC_stats.csv")
+
+write.csv(GDP_stats, file= "./output/GDP_stats.csv")
+
+## ---------------------
+## Scale data for clustering
+
 scale(na.omit(select(clust_dat, -state))) -> scaled_dat
 
 clusters <- kmeans(scaled_dat, 3)

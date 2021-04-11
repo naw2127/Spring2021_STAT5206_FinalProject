@@ -50,6 +50,8 @@ GDP_USD_SIC[GDP_USD_SIC$IndustryClassification == "[01-02]" |
   group_by(Region, Year) %>% summarize(avg_gdp = mean(as.numeric(value))) -> GDP_SIC_longer
 
 
+
+## ---------------------
 ## Graphing
 library(ggplot2)
 
@@ -94,6 +96,7 @@ ggsave(path = "./figs", filename = "rawGDP_agriculture.png")
 GDP_USD_SIC[GDP_USD_SIC$IndustryClassification == "[01-02]",] %>%
   pivot_longer("1963":"1997", names_to = "Year") %>% na.omit() %>%
   group_by(Region, Year) %>% summarize(avg_gdp = mean(as.numeric(value))) -> GDP_SIC_Farmonly
+
 levels(GDP_SIC_Farmonly$Region) <- regions
 GDP_SIC_Farmonly <- GDP_SIC_Farmonly[GDP_SIC_Farmonly$Region != "Far West",]
 
