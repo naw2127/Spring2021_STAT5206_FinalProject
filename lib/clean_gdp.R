@@ -71,6 +71,7 @@ SIC_graph <- ggplot(GDP_SIC_longer, aes(x = as.numeric(Year),
 GDP_USD_SIC[GDP_USD_SIC$IndustryClassification == "[07-09]",] %>%
   pivot_longer("1963":"1997", names_to = "Year") %>% na.omit() %>%
   group_by(Region, Year) %>% summarize(avg_gdp = mean(as.numeric(value))) -> GDP_SIC_Agonly
+
 levels(GDP_SIC_Agonly$Region) <- regions
 GDP_SIC_Agonly <- GDP_SIC_Agonly[GDP_SIC_Agonly$Region != "Far West",]
 

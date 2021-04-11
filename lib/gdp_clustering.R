@@ -23,51 +23,56 @@ library(usmap)
 # - Finding total gdps
 # - Renaming columns
 # - Merging the totals and finding percent contribution from agriculture
-interest_states <- c(north, south)
+interest_states <- c(north, mid, south)
 
 GDP_USD_SIC[!is.na(GDP_USD_SIC$Region) & toupper(GDP_USD_SIC$GeoName) %in% interest_states,] %>%
   pivot_longer("1963":"1997", names_to = "Year") %>% na.omit() -> temp
 
-temp[temp$value != "(L)" & temp$value != "(NA)",] %>%
-  group_by(GeoName, Year) %>% summarize(total = sum(as.numeric(value))) %>%
-  rename("state" = "GeoName", "year" = "Year") -> totals_SIC
+temp[temp$Description == "All industry total",] %>%
+  rename("state" = "GeoName", "year" = "Year", "total" = "value") %>%
+  select(state, year, total) %>% mutate(total = as.numeric(total)) -> totals_SIC
 
-GDP_USD_SIC[GDP_USD_SIC$IndustryClassification == "[07-09]" &
+GDP_USD_SIC[GDP_USD_SIC$IndustryClassification == "A" &
               !is.na(GDP_USD_SIC$Region) & toupper(GDP_USD_SIC$GeoName) %in% interest_states,] %>%
   pivot_longer("1963":"1997", names_to = "Year") %>% na.omit() %>%
   group_by(GeoName, Year) %>% summarize(avg_gdp = mean(as.numeric(value))) %>%
   rename("state" = "GeoName", "year" = "Year", "value" = "avg_gdp") -> GDP_SIC_State
 
 GDP_USD_NAICS[!is.na(GDP_USD_NAICS$Region) &
-                toupper(str_replace_all(GDP_USD_NAICS$GeoName,"[^[:graph:]]", " ")) %in% interest_states,] %>%
+                toupper(str_replace_all(GDP_USD_NAICS$GeoName,"[^[:graph:]]", " ")) %in% interest_states &
+                GDP_USD_NAICS$Description == "All industry total",] %>%
   pivot_longer("2001":"2019", names_to = "Year") %>% na.omit() %>%
   group_by(GeoName, Year) %>% summarize(total = sum(as.numeric(value))) %>%
   rename("state" = "GeoName", "year" = "Year") -> totals_NAICS
 
 GDP_USD_NAICS[GDP_USD_NAICS$IndustryClassification == 11 &
-              !is.na(GDP_USD_NAICS$Region) & toupper(str_replace_all(GDP_USD_NAICS$GeoName,"[^[:graph:]]", " ")) %in% interest_states,] %>%
+                !is.na(GDP_USD_NAICS$Region) & toupper(str_replace_all(GDP_USD_NAICS$GeoName,"[^[:graph:]]", " ")) %in% interest_states &
+                GDP_USD_NAICS$Description != "All industry total" &
+                GDP_USD_NAICS$Description != "Private industries",] %>%
   pivot_longer("2001":"2019", names_to = "Year") %>% na.omit() %>%
   group_by(GeoName, Year) %>% summarize(avg_gdp = mean(as.numeric(value))) %>%
   rename("state" = "GeoName", "year" = "Year", "value" = "avg_gdp") -> GDP_NAICS_State
+
 
 inner_join(GDP_NAICS_State, totals_NAICS) %>% mutate(avg_gdp = value, perc = avg_gdp/total) ->
   NAICS_Perc
 inner_join(GDP_SIC_State, totals_SIC) %>% mutate(avg_gdp = value, perc = avg_gdp/total) ->
   SIC_Perc
 
+
+north <- c("IDAHO","MINNESOTA","MONTANA", "NORTH DAKOTA",
+           "SOUTH DAKOTA", "WISCONSIN")
+
+mid <- c("ILLINOIS", "INDIANA", "IOWA", "NEBRASKA", "KANSAS",
+         "KENTUCKY", "MISSOURI")
+
+south <- c("ARKANSAS", "OKLAHOMA",
+           "TENNESSEE", "TEXAS")
+
 # A very slightly modified version of Natalie's state cleaning code
 state_stats <- function(cln_dat){
   # get state stats 
   state_stats <- cln_dat %>%
-    group_by(year, state)%>%
-    summarize(
-      avg_gdp = mean(avg_gdp),
-      max_gdp = max(avg_gdp),
-      min_gdp = min(avg_gdp),
-      avg_perc = mean(perc),
-      max_perc = max(perc),
-      min_perc = min(perc)
-    )%>%
     mutate(
       region = case_when(
         toupper(state) %in% north ~ "north",
@@ -75,7 +80,7 @@ state_stats <- function(cln_dat){
         toupper(state) %in% south ~ "south"
       )
     )
-  # get national average of each year
+  "# get national average of each year
   nat_stats <- state_stats%>%
     group_by(year)%>%
     summarize(
@@ -88,7 +93,7 @@ state_stats <- function(cln_dat){
     mutate(
       pct_diff = (avg_gdp - nat_avg_gdp)/ nat_avg_gdp
     )
-  
+  "
   return(state_stats)
 }
 
