@@ -150,7 +150,7 @@ sale_crop_totals <- left_join(select(midwest_crops, c(year, state, region, total
 g6 <- ggplot(sale_crop_totals , aes(y = adj_value, x = total, color = state))+
   geom_smooth()+
   facet_wrap(~region)+
-  scale_y_continuous(labels = scales::unit_format(unit = "M", scale = 1e-6, accuracy = 0))+
+  scale_y_continuous(labels = scales::unit_format(unit = "M", scale = 1e-6, accuracy = 1))+
   labs(
     title = "Despite having similar yields, southern states production is valued much lower ", 
     subtitle = "Prices adjusted to 2019 Dollars Using World Bank Resources",
@@ -162,3 +162,17 @@ g6
 
 ggsave(path = "./figs", filename = "Corn production.png")
 
+south_sale_crop_totals <- filter(sale_crop_totals, region== "south")
+
+g7 <- ggplot(south_sale_crop_totals , aes(y = adj_value, x = total, color = state))+
+  geom_smooth()+
+  facet_wrap(~region)+
+  scale_y_continuous(labels = scales::unit_format(unit = "M", scale = 1e-6, accuracy = 1))+
+  labs(
+    title = "", 
+    subtitle = "Prices adjusted to 2019 Dollars Using World Bank Resources",
+    y = "Total Corn Production in $ ", 
+    x = "Total Corn Yield in Bushels per Acre"
+  )
+
+g7

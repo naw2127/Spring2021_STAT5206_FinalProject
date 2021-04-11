@@ -71,6 +71,7 @@ state_stats <- function(cln_dat){
     mutate(
       region = case_when(
         toupper(state) %in% north ~ "north",
+        toupper(state) %in% mid ~ "mid",
         toupper(state) %in% south ~ "south"
       )
     )
@@ -163,7 +164,7 @@ dev.off()
 
 # North and south split GDP average and percent
 region_gdp_SIC <- ggplot(data = SIC_stats, aes(y = avg_gdp, x = as.numeric(year), group = state, color = state)) +
-  geom_smooth(se = FALSE) +
+  geom_smooth() +
   facet_wrap(~region, nrow = 1) +
   labs(title = "Average raw GDP contributed by agriculture",
        subtitle = "It has increased faster in the south before 2000",
@@ -173,7 +174,8 @@ region_gdp_SIC
 ggsave(path = "./figs", filename = "rawGDP_northsouth.png")
 
 region_perc_SIC <- ggplot(data = SIC_stats, aes(y = avg_perc, x = as.numeric(year), group = state, color = state)) +
-  geom_smooth(se = FALSE) +
+  scale_y_continuous(labels= scales::percent)+
+  geom_smooth() +
   facet_wrap(~region, nrow = 1) +
   labs(title = "Average percent GDP contributed by agriculture",
        subtitle = "The percent contribution converges more in the south",
@@ -183,7 +185,7 @@ region_perc_SIC
 ggsave(path = "./figs", filename = "percGDP_northsouth.png")
 
 region_gdp_NAICS <- ggplot(data = NAICS_stats, aes(y = avg_gdp, x = as.numeric(year), group = state, color = state)) +
-  geom_smooth(se = FALSE) +
+  geom_smooth(se = TRUE) +
   facet_wrap(~region, nrow = 1) +
   labs(title = "Average raw GDP contributed by agriculture",
        subtitle = "It dips for everybody around 2013 and south drops faster",
@@ -193,7 +195,8 @@ region_gdp_NAICS
 ggsave(path = "./figs", filename = "GDPnew_northsouth.png")
 
 region_perc_NAICS <- ggplot(data = NAICS_stats, aes(y = avg_perc, x = as.numeric(year), group = state, color = state)) +
-  geom_smooth(se = FALSE) +
+  scale_y_continuous(labels= scales::percent)+
+  geom_smooth(se = TRUE) +
   facet_wrap(~region, nrow = 1) +
   labs(title = "Average percent GDP contributed by agriculture",
        subtitle = "The more agriculture was already contributing, the faster it dropped",

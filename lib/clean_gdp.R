@@ -33,9 +33,13 @@ GDP_PERC_NAICS <- read_csv("data/CAGDP11__ALL_AREAS_2002_2019.csv")
 ## Region separating
 north <- c("IDAHO","MINNESOTA","MONTANA", "NORTH DAKOTA",
            "SOUTH DAKOTA", "WISCONSIN")
-south <- c("ARKANSAS","ILLINOIS", "INDIANA", "IOWA", "KANSAS",
-           "KENTUCKY", "MISSOURI", "NEBRASKA", "OKLAHOMA",
+
+mid <- c("ILLINOIS", "INDIANA", "IOWA", "NEBRASKA", "KANSAS",
+         "KENTUCKY", "MISSOURI")
+
+south <- c("ARKANSAS", "OKLAHOMA",
            "TENNESSEE", "TEXAS")
+
 regions <- c("New England", "Mideast", "Great Lakes", "Plains", "Southeast",
              "Southwest", "Rocky Mountain", "Far West")
 
