@@ -68,11 +68,15 @@ GDP_USD_SIC[GDP_USD_SIC$IndustryClassification == "[07-09]",] %>%
 levels(GDP_SIC_Agonly$Region) <- regions
 GDP_SIC_Agonly <- GDP_SIC_Agonly[GDP_SIC_Agonly$Region != "Far West",]
 
+GDP_SIC_Agonly %>% mutate(Region = as.factor(Region),
+                          Year = as.numeric(Year)) -> GDP_SIC_Agonly
+levels(GDP_SIC_Agonly$Region) <- regions
+
 SIC_graph2 <- ggplot(GDP_SIC_Agonly, aes(x = as.numeric(Year),
                                          y = avg_gdp, color = as.factor(Region), group = as.factor(Region))) +
   geom_point() + geom_smooth() +
   labs(
-    title = str_wrap("GDP contributed by agriculuture by region"),
+    title = str_wrap("raw GDP contributed by agriculture grouped by region"),
     x = "Year",
     y = "Average GDP"
   ) +
@@ -113,6 +117,10 @@ temp[temp$value != "(D)" & temp$value != "(NA)",] %>%
 levels(GDP_NAICS_long$Region) <- regions
 GDP_NAICS_long <- GDP_NAICS_long[GDP_NAICS_long$Region != "Far West",]
 
+GDP_NAICS_long %>% mutate(Region = as.factor(Region),
+                          Year = as.numeric(Year)) -> GDP_NAICS_long
+levels(GDP_NAICS_long$Region) <- regions
+
 NAICS_graph <- ggplot(GDP_NAICS_long, aes(x = as.numeric(Year),
                                           y = avg_gdp, color = as.factor(Region), group = as.factor(Region))) +
   geom_point() + geom_smooth() +
@@ -125,8 +133,8 @@ NAICS_graph <- ggplot(GDP_NAICS_long, aes(x = as.numeric(Year),
   theme(legend.position = 'bottom')
 
 # Combining SIC and NAICS agriculture
-rbind(GDP_SIC_Agonly, GDP_NAICS_long) %>% mutate(Region = as.factor(Region),
-                                                 Year = as.numeric(Year)) -> Merged
+rbind(GDP_SIC_Agonly, GDP_NAICS_long) -> Merged
+
 # Graph of SIC and NAICS merged
 Merged_graph <- ggplot(Merged, aes(x = as.numeric(Year),
                                    y = avg_gdp, color = as.factor(Region), group = as.factor(Region))) +
@@ -150,4 +158,16 @@ model <- c()
 for(r in 1:length(regions)){
   model[r] <- region_lines(Merged, regions[r])
   names(model[r]) <- regions[r]
+}
+
+model_old <- c()
+for(r in 1:length(regions)){
+  model_old[r] <- region_lines(GDP_SIC_Agonly, regions[r])
+  names(model_old[r]) <- regions[r]
+}
+
+model_new <- c()
+for(r in 1:length(regions)){
+  model_new[r] <- region_lines(GDP_NAICS_long, regions[r])
+  names(model_new[r]) <- regions[r]
 }
