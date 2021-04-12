@@ -30,6 +30,7 @@ library(usmap)       # for plotting kmeans resutls on map
 
 midwest_stats <- read_csv("./output/midwest_crop_yields.csv")
 midwest_sales <- read_csv("./output/midwest_sales.csv")
+midwest_rel_output <- read_csv("./output/total_agricultural_output_1960_2004.csv")
 
 
 ## ---------------------------

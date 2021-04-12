@@ -142,6 +142,56 @@ cln_sales <- cln_dat(raw_sales)
 midwest_sales <- sale_stats(cln_sales)
 write.csv(midwest_sales, file= "./output/midwest_sales.csv")
 
+
+## ---------------------------
+## Methods for cleaning total crop outputs from USDA site
+## https://www.ers.usda.gov/data-products/agricultural-productivity-in-the-us/
+
+raw_crop_outputs <- read_csv("./data/crop_yields_1960_2004.csv")
+
+# select states of interest 
+north <- c("IDAHO","MINNESOTA","MONTANA", "NORTH DAKOTA",
+           "SOUTH DAKOTA", "WISCONSIN")
+
+mid <- c("ILLINOIS", "INDIANA", "IOWA", "NEBRASKA", "KANSAS",
+         "KENTUCKY", "MISSOURI")
+
+south <- c("ARKANSAS", "OKLAHOMA",
+           "TENNESSEE", "TEXAS")
+
+output_cols <- c("Year", "ID", "MN", "MT", "ND", "SD", "WI", 
+                "AR", "OK", "TN", 'TX')
+
+crop_outputs <- raw_crop_outputs %>% 
+  select(output_cols)%>%
+  rename(
+    "year"=  "Year" , 
+    "IDAHO" ="ID",
+    "MINNESOTA" = "MN",
+    "MONTANA" = "MT",
+    "NORTH DAKOTA" = "ND",
+    "SOUTH DAKOTA" = "SD",
+    "WISCONSIN" = "WI",
+    "ARKANSAS" ="AR", 
+    "OKLAHOMA" = "OK",
+    "TENNESSEE" = "TN",
+    "TEXAS" = 'TX'
+  )%>%
+  pivot_longer(
+    cols = -year,
+    names_to = "state",
+    values_to = "rel_crop_output"
+  )%>%
+  mutate(
+    region = case_when(
+      state %in% north ~ "north",
+      state %in% mid ~ "mid",
+      state %in% south ~ "south"
+    )
+  )
+write.csv(crop_outputs, file="./output/total_agricultural_output_1960_2004.csv")
+
+
 ## ---------------------------
 ## Methods for standardizing clean data -- ENDED UP NOT USING -- 
 
