@@ -24,6 +24,7 @@ setwd(natalie_wd)     # Natalie's working directory (mac)
 ## load up the packages we will need: 
 library(tidyverse)
 library(usmap)       # for plotting kmeans resutls on map
+library(GGally)      # for plotting covar matrices
 
 ## ---------------------------
 ## Read in data 
@@ -36,7 +37,7 @@ midwest_rel_output <- read_csv("./output/total_agricultural_output_1960_2004.csv
 ## ---------------------------
 ## Make US map showing regions
 
-png("./figs/regions_map.png")  # for saving
+png("./figs/final/regions_map.png")  # for saving
 p2 <- plot_usmap(data = midwest_stats, values = "region", color = "white")+ 
   scale_fill_manual(values = c(`north` = "lightgreen", `mid` = "green", `south` = "yellow"),
                     name = "Region", na.value="lightgray") +
@@ -44,6 +45,30 @@ p2 <- plot_usmap(data = midwest_stats, values = "region", color = "white")+
 
 p2
 dev.off()  # when this line is run, the png is saved
+
+## ---------------------------
+## Check if corn is actually a suitable tracer for state output
+## Correlation matrix of total crop output and corn output by region 
+
+# select only desired midwest_stats col
+
+total_vs_corn <- inner_join(midwest_stats, midwest_rel_output, by = c("year", "state", "region"))%>%
+  select(c(year, state, region, total, rel_crop_output))%>%
+  rename(
+    "corn_total_yield" = "total"
+  )
+
+# Get correlation coefficient matrix 
+south_corr <- ggcorr(filter(total_vs_corn, region == "south"), 
+       method= c("pairwise", "pearson"),
+       label_round = 2, label = TRUE)# pairwise so states are compared against themselves, pearson bc linear relationship
+south_corr
+
+# Get correlation coefficient matrix 
+north_corr <- ggcorr(filter(total_vs_corn, region == "north"), 
+                     method= c("pairwise", "pearson"),
+                     label_round = 2, label = TRUE)# pairwise so states are compared against themselves, pearson bc linear relationship
+north_corr
 
 ## -------------------------
 ## Peak at distribution of state totals in north and south
@@ -108,7 +133,7 @@ g3 <- ggplot(g3_dat, aes(y = total, x = year,color = state))+
   )
 
 g3
-ggsave(path = "./figs", filename = "totals v years.png")
+ggsave(path = "./figs/final", filename = "totals v years.png")
 ## -------------------------
 ## same plot as g3 but line plot
 
@@ -123,7 +148,7 @@ g4 <- ggplot(g3_dat, aes(y = total, x = year, color = state))+
   )
 
 g4
-ggsave(path = "./figs", filename = "totals v years with lines.png")
+ggsave(path = "./figs/final", filename = "totals v years with lines.png")
 
 ## -------------------------
 ## Plot sale data
@@ -177,3 +202,22 @@ g7 <- ggplot(south_sale_crop_totals , aes(y = adj_value, x = total, color = stat
   )
 
 g7
+
+
+## ----------------
+## graph of rel crop outputs
+
+g8 <- ggplot(midwest_rel_output, aes(x = year, y = rel_crop_output))+
+  geom_line(aes(group = state, color = region), linetype = "dashed")+
+  geom_smooth(aes(color = region), size = 2)+
+  labs(
+    title = "Total Crop Output relative to 1996 Alabama",
+    subtitle = "Northern states over take southern states in 1972",
+    y = "Crop Output relative to 1996 Alabama"
+  )
+
+g8
+
+ggsave(path = "./figs", filename = "all crop output north and south.png")
+
+
