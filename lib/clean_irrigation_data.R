@@ -28,71 +28,110 @@ library(tidyverse)
 ## ---------------------------
 ## Read in crop yield data 
  
-raw_data <- read_csv("./data/NASS_2000_2020_IR.csv")
+raw_data <- read_csv("./data/NASS_1975_2020_Irrigation.csv")
 colnames <- colnames(raw_data)
 
-del_cols <- c("Program", "Zip Code", "Week Ending", "Geo Level","State ANSI","Ag District","Ag District Code","County ANSI","Region",
+
+# Remove  unneccessary columns
+del_cols <- c("Program", "Zip Code","County","CV (%)", "Week Ending", "Geo Level","State ANSI","Ag District","Ag District Code","County ANSI","Region",
               "watershed_code","Domain Category", "Domain", "Watershed")
 
-fil_data <- select(raw_data, -del_cols)%>%filter(State != "DELAWARE")# filtered_data removed unwanted columns
+fil_data <- select(raw_data, -del_cols)# filtered_data removed unwanted columns and states
 print(fil_data, n=3)
 
-states <- unique(fil_data$State)
-
 ## ---------------------------
-## Pivot data wider to separate rows for irrigated and non irrigated data
-dat_item <- unique(fil_data$`Data Item`)
-print(dat_item)
+## Rename columns, rename data item possible values, pivot wider add regions
 
-## fxn to replace `Data Item` with "non-irrigated" or "irrigated"
-replace_type <- function(dat){
-  rep_dat <- dat%>% 
-  mutate_if(is.character, str_replace_all, 
-            pattern = dat_item[1], replacement = "irrigated")%>%
-    mutate_if(is.character, str_replace_all, 
-              pattern = dat_item[2], replacement = "non_irrigated")%>%
-    rename("year" = "Year", "state"="State", "county"="County", 
-           "data_item"= "Data Item", "value"="Value", "cv" = "CV (%)")
-  return(rep_dat)
+north <- c("IDAHO","MINNESOTA","MONTANA", "NORTH DAKOTA",
+           "SOUTH DAKOTA", "WISCONSIN")
+
+mid <- c("ILLINOIS", "INDIANA", "IOWA", "NEBRASKA", "KANSAS",
+         "KENTUCKY", "MISSOURI")
+
+south <- c("ARKANSAS", "OKLAHOMA",
+           "TENNESSEE", "TEXAS")
+
+cln_dat <- function(raw_dat){
+  
+  cleaned_data <- raw_dat %>%
+    select(Year, State, "Data Item", Value)%>%
+    rename("year" = "Year", "state"="State", 
+           "data_item"= "Data Item", "value"="Value" )%>%
+    mutate(
+      region = case_when(
+        state %in% north ~ "north",
+        state %in% mid ~ "mid",
+        state %in% south ~ "south"
+      )
+    )%>%
+    filter(!is.na(region))    # raw data includes states not needed in analysis
+  
+  # change possible string values in data_item col and pivot data
+  piv_dat <- cleaned_data%>%
+    mutate(
+      data_item = if_else(grepl("NON", data_item), "non_irrigated", "irrigated")
+    )%>%
+    mutate(id = row_number())%>%
+    pivot_wider(
+      id_cols =c(id, state, year, region), names_from = data_item, values_from = value,
+      values_fill = NA,
+      )%>%
+    select(-id)%>%
+    arrange(non_irrigated)
+  
+  return(piv_dat)
 }
+cln_irr <- cln_dat(fil_data)
+head(cln_irr)
 
-rep_data <- replace_type(fil_data)
+## ----------------------------------
+## Get counts of NA values 
 
+na_counts <- cln_irr %>%
+  group_by(state)%>%
+  summarise(
+    total_obs = n(),
+    non_irrigated = (-1* sum(is.na(non_irrigated))),
+    irrigated = sum(is.na(irrigated))
+  )%>%
+  pivot_longer(cols=c(non_irrigated, irrigated), names_to = "type", values_to = "count")
 
-## Function to pivot data and calc state stats
-pivot_grp_dat <- function(dat){
-  pivoted <- dat %>%
-    ## use values_fn = sum bc "other counties" rows cause error otherwise
-    pivot_wider(names_from = "Data Item", values_from= Value, values_fn = sum)%>%
-    select(-"CV (%)")%>%
-    group_by(Year, State)%>%
+g1 <- ggplot(na_counts, aes(x = state, y = count, fill = type))+
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  labs(
+    title = "Number of Observations that are NA"
+  )
+g1
+## --------------------------------------------
+## Function to calc state stats
+irr_stats <- function(cln_dat){
+  stats <- cln_dat%>%
+    group_by(year, state, region)%>%
     summarize(
-      irrigated_sum = sum(irrigated),
-      non_irrigated_sum = sum(non_irrigated, na.rm= TRUE), 
-      total = sum(irrigated_sum, non_irrigated_sum, na.rm=TRUE), 
-      pc_irr = irrigated_sum/ total, 
-      pc_non_irr = non_irrigated_sum / total
+      irrigated = sum(irrigated),
+      non_irrigated = sum(non_irrigated),
+      pct_irr = irrigated/ (irrigated + non_irrigated), 
+      pct_non_irr = non_irrigated/ (irrigated + non_irrigated)
     )
-  return(pivoted)
+  return(stats)
 }
 
-agg_dat <- pivot_grp_dat(rep_data)
-print(agg_dat, n=5)
+irr_stats <- irr_stats(cln_irr)
+head(irr_stats)
 
 ## Write to output folder
-write.csv(agg_dat, file= "./output/state_irrigation_data.csv")
+write.csv(irr_stats, file= "./output/state_irrigation_data.csv")
 
 ## ---------------------------
 ## Make graph
-g1 <- ggplot(agg_dat, aes(x=Year, y=pc_non_irr))+
-  geom_smooth(aes(color=State))+
+g1 <- ggplot(cln_irr, aes(x=year, y=non_irrigated))+
+  geom_point(aes(color = state))+
   labs(
-    title = str_wrap("Percent of Crop Yield without Irrigation?", width=40),
+    title = "Yield of Non Irrigated Corn in Bushels / Acre",
     x= "Year",
-    y= "Irrigated Corn Bushels per Acre"
+    y= "Bushels / Acre"
   )+
-  scale_y_continuous(labels = scales::percent)+
-  theme_classic()+
   theme(legend.position = 'bottom')
 
 g1
