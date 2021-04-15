@@ -18,6 +18,9 @@
 kimberly_wd <- "~/Classes/DataScience/Spring2021_STAT5206_FinalProject"
 setwd(kimberly_wd)     # Kimberly's working directory
 
+natalie_wd <- "~/SENIOR YEAR/Stat comp and intro to data science/Final Project/Spring2021_STAT5206_FinalProject"
+setwd(natalie_wd) 
+
 library(tidyverse)
 
 # Load data
@@ -59,26 +62,27 @@ is_outlier <- function(x) {
 no_mid_NAICS %>%
   mutate(outlier = ifelse(is_outlier(agri_gdp), state, as.numeric(NA))) %>%
   ggplot(aes(x = region, y = agri_gdp, fill = region)) +
-  geom_boxplot() + coord_flip() +
+  geom_boxplot() + scale_y_continuous(label = scales::unit_format(unit = "B", scale = 1e-6, sep = ""))+ coord_flip() +  
   labs(title = "Comparison of agricultural GDP distribution (2001-2019)",
        subtitle = "The south has a larger right skew, mostly due to Texas",
-       x = "Region", y = "Raw Agricultural GDP in thousands of current dollars USD") +
+       x = "Region", y = "Raw Agricultural GDP in current dollars USD") +
   annotate("text", label = "Texas", x = 2.1, y = 1*10000000) +
   annotate("text", label = "Minnesota", x = 1.1, y = .87*10000000) ->
   GDP_box_2001_2019
+GDP_box_2001_2019
 
 ggsave(path = "./figs/final", filename = "GDP_box_2001_2019.png")
 
 no_mid_SIC %>%
-  mutate(outlier = ifelse(is_outlier(agri_gdp), state, as.numeric(NA))) %>%
+  mutate(outlier = ifelse(is_outlier(agri_gdp), state, as.numeric(NA)))%>%
   ggplot(aes(x = region, y = agri_gdp, fill = region)) +
-  geom_boxplot() + coord_flip() +
+  geom_boxplot() + scale_y_continuous(label = scales::unit_format(unit = "B", scale = 1e-3, sep = ""))+ coord_flip() +
   labs(title = "Comparison of agricultural GDP distribution (1975-1997)",
-       subtitle = "The south has a tighter distribution of GDPs than the north",
-       x = "Region", y = "Raw Agricultural GDP in thousands of current dollars USD") +
-  annotate("text", label = "Kansas", x = 2.1, y = 2.65*1000) ->
+       subtitle = "Texas behaves very different then other southern states",
+       x = "Region", y = "Raw Agricultural GDP in current dollars USD") +
+  annotate("text", label = "Texas", x = 2.1, y = 7000) ->
   GDP_box_1975_1997
-
+GDP_box_1975_1997
 ggsave(path = "./figs/final", filename = "GDP_box_1975_1997.png")
 
 #geom_text(aes(label = tolower(outlier)), na.rm = TRUE, nudge_x = .1)
@@ -88,6 +92,7 @@ no_mid_SIC %>% ggplot(aes(x = region, y = total_cy, fill = region)) +
   labs(title = "Comparison of total crop yield (1975-1997)",
        x = "Region", y = "Total crop yield in summed bushels per acre") ->
   CY_box_1975_1997
+CY_box_1975_1997
 
 ggsave(path = "./figs/review", filename = "CY_box_1975_1997.png")
 
