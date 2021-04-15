@@ -119,6 +119,7 @@ no_mid_NAICS %>% ggplot(aes(x = region, y = med_cy, fill = region)) +
        subtitle = "Norths median crop yield has moved up more",
        x = "Region", y = "Median crop yield in bushels per acre") ->
   CY_med_box_2001_2019
+CY_med_box_2001_2019
 
 ggsave(path = "./figs/review", filename = "CY_med_box_2001_2019.png")
 
