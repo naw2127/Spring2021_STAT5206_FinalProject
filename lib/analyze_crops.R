@@ -25,7 +25,7 @@ setwd(natalie_wd)     # Natalie's working directory (mac)
 
 ## load up the packages we will need: 
 library(tidyverse)
-library(usmap)       # for plotting kmeans resutls on map
+library(usmap)       # for plotting 
 library(broom)       # for getting slopes of trendlines
 
 ## ---------------------------
