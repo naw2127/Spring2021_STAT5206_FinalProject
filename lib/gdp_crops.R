@@ -31,25 +31,28 @@ library(usmap)
 all_early <- read_csv("./output/all_vars_1975_1997.csv")
 all_late <- read_csv("./output/all_vars_2001_2019.csv")
 
-head(all_early)  
-head(all_late)
+head(all_early) # SIC Data merged with every thing 
+head(all_late) # NAICS
 ## ---------------------
 ## Some prelim graphs 
 ## Stats with % GDP from agriculture 
 
 SIC_stats_1975 <- all_early %>% filter(year == 1975 & state != "Idaho" & state != "Montana")
 
-head(SIC_stats_1975)
+heatmap <- rbind(SIC_stats_1975, NAICS_stats_2019)%>% 
+  select(year, state, perc_agri_gdp)%>%
+  na.omit()
 
-png("./figs/final/perc_GDP_map_1975.png")  # for saving
+png("./figs/final/perc_GDP_map_1975_2019.png")  # for saving
 
-p2 <- plot_usmap(data = SIC_stats_1975, values = "perc_agri_gdp", color = "white",)+ 
+p2 <- plot_usmap(data = heatmap, values = "perc_agri_gdp", color = "white",)+ 
   scale_fill_gradient(low =  "lightgreen", high =  "darkgreen", na.value="lightgray",
                       name = "Percent GDP",label = scales::percent) +
+  facet_grid(~year)+
   labs(
-    title = "% of GDP from Agriculture, Forestry, and Fishing in 1975"
+    title = "Change in % of GDP from Agriculture, Forestry, and Fishing from 1975 to 2019"
   )+
-  theme(legend.position = "right")
+  theme(legend.position = "left")
 
 p2
 dev.off() 
@@ -75,51 +78,142 @@ dev.off()
 
 ## ----------------
 ## Southern States early years
-OK_full <- all_early %>%  filter(state == "OKLAHOMA")
+OK_full_early <- all_early %>%  filter(state == "OKLAHOMA")
 
-TX_full <- all_early %>%  filter(state == "TEXAS")
+TX_full_early <- all_early %>%  filter(state == "TEXAS")
 
-AR_full <- all_early %>%  filter(state == "ARKANSAS")
+AR_full_early <- all_early %>%  filter(state == "ARKANSAS")
 
-TN_full <- all_early %>%  filter(state == "TENNESSEE")
+TN_full_early <- all_early %>%  filter(state == "TENNESSEE")
+
+south_early <- do.call("rbind", list(OK_full_early, TX_full_early, AR_full_early, TN_full_early))
 
 ## ----------------
 ## Northern states
 
-WI_full <- all_early %>%  filter(state == "WISCONSIN")
+WI_full_early <- all_early %>%  filter(state == "WISCONSIN")
 
-MN_full <- all_early %>%  filter(state == "MINNESOTA")
+MN_full_early <- all_early %>%  filter(state == "MINNESOTA")
 
-MT_full <- all_early %>%  filter(state == "MONTANA")
+MT_full_early <- all_early %>%  filter(state == "MONTANA")
 
-ND_full <- all_early %>%  filter(state == "NORTH DAKOTA")
+ND_full_early <- all_early %>%  filter(state == "NORTH DAKOTA")
 
-SD_full <- all_early %>%  filter(state == "SOUTH DAKOTA")
+SD_full_early <- all_early %>%  filter(state == "SOUTH DAKOTA")
 
+north_early <- do.call("rbind", list(WI_full_early, MN_full_early, MT_full_early, ND_full_early, SD_full_early))
 
 ## ----------------
-## Plots 
-coeff = 10
+## Southern States late years
+OK_full_late <- all_late %>%  filter(state == "OKLAHOMA")
 
-g1 <- ggplot(OK_full, aes(x=year))+
+TX_full_late <- all_late %>%  filter(state == "TEXAS")
+
+AR_full_late <- all_late %>%  filter(state == "ARKANSAS")
+
+TN_full_late <- all_late %>%  filter(state == "TENNESSEE")
+
+south_late <- do.call("rbind", list(OK_full, TX_full, AR_full, TN_full))
+
+## ----------------
+## Northern states
+
+WI_full_late <- all_late %>%  filter(state == "WISCONSIN")
+
+MN_full_late <- all_late %>%  filter(state == "MINNESOTA")
+
+MT_full_late <- all_late %>%  filter(state == "MONTANA")
+
+ND_full_late <- all_late %>%  filter(state == "NORTH DAKOTA")
+
+SD_full_late <- all_late %>%  filter(state == "SOUTH DAKOTA")
+
+north_late <- do.call("rbind", list(WI_full_late, MN_full_late, MT_full_late, ND_full_late, SD_full_late))
+
+## ----------------
+## Plot changes in agricultural GDP and corn crop yields for OK and ND
+coeff = 0.001
+
+g1 <- ggplot(OK_full_late, aes(x=year))+
   geom_smooth( method = "loess", aes(y=agri_gdp), color="darkgreen") + 
-  geom_line( aes(y=total_cy), size = 2, color="lightgreen")  +
+  geom_line( aes(y=agri_gdp), color="darkgreen", linetype = "dashed") + 
+  geom_line( aes(y=total_cy/ coeff), size = 2, color="lightgreen")  +
   scale_y_continuous(
-    name = "Agricultural GDP",
-    sec.axis = sec_axis(~.*coeff, name="Total State Crop Yields")
+    name = "Agricultural GDP in Billions USD",
+    label = scales::unit_format(unit = "B", scale = 1e-6, sep = ""),
+    sec.axis = sec_axis(~.*coeff, name="Total State Corn Crop Yields in Corn Bushels per Acre")
   )+
   labs(
-    title = "Oklahoma Agricultural GDP and Crop Yields", 
-    subtitle = "Dark green line indicated Agricultural GDP, light green Crop Yields"
-  )
+    title = "Oklahoma Agricultural GDP and Corn Crop Yields", 
+    subtitle = "Despite decreasing corn crop yields, agricultural GDP slowly increases."
+  )+ 
+  annotate("text", label = "Corn Crop Yields", x = 2004, y = 5.5*1000000)+ 
+  annotate("text", label = "Agricultural GDP", x = 2004, y = 2.6*1000000)
 g1
+ggsave(path = "./figs/final", filename = "OK corn yields and agri gdp.png")
+
+g2 <- ggplot(ND_full_late, aes(x=year))+
+  geom_smooth( method = "lm", aes(y=agri_gdp), color="darkgreen") + 
+  geom_line( aes(y=agri_gdp), color="darkgreen", linetype = "dashed") + 
+  geom_line( aes(y=total_cy/ coeff), size = 2, color="lightgreen")  +
+  scale_y_continuous(
+    name = "Agricultural GDP in Billions USD",
+    label = scales::unit_format(unit = "B", scale = 1e-6, sep = ""),
+    sec.axis = sec_axis(~.*coeff, name="Total State Corn Crop Yields in Corn Bushels per Acre")
+  )+
+  labs(
+    title = "North Dakota Agricultural GDP and Corn Crop Yields", 
+    subtitle = "In the past 20 years, corn yields have been steady and agricultural GDP is increasing."
+  )+ 
+  annotate("text", label = "Corn Crop Yields", x = 2004, y = 5.5*1000000)+ 
+  annotate("text", label = "Agricultural GDP", x = 2004, y = 2.6*1000000)
+g2
+ggsave(path = "./figs/final", filename = "ND corn yields and agri gdp.png")
+
+## ------------------------------------------------------
+## Plot changes in  perc agricultural GDP and corn crop yields for OK and ND
+## DONT END UP USING BC PERC of GDP is sooo low
+coeff2 = 100000
+
+g3 <- ggplot(OK_full_late, aes(x=year))+
+  geom_smooth( method = "loess", aes(y=perc_agri_gdp), color="darkgreen") + 
+  geom_line( aes(y=perc_agri_gdp), color="darkgreen", linetype = "dashed") + 
+  geom_line( aes(y=total_cy/ coeff2), size = 2, color="lightgreen")  +
+  scale_y_continuous(
+    name = "% of GDP from Agriculture",
+    label = scales::percent,
+    sec.axis = sec_axis(~.*coeff2, name="Total State Corn Crop Yields in Corn Bushels per Acre")
+  )+
+  labs(
+    title = "Oklahoma Agricultural GDP and Corn Crop Yields", 
+    subtitle = "Despite decreasing corn crop yields, agricultural GDP slowly increases."
+  )+ 
+  annotate("text", label = "Corn Crop Yields", x = 2004, y = 0.055)+ 
+  annotate("text", label = "Agricultural GDP %", x = 2004, y = 0.026)
+g3
+
+
+g4 <- ggplot(ND_full_late, aes(x=year))+
+  geom_smooth( method = "lm", aes(y=agri_gdp), color="darkgreen") + 
+  geom_line( aes(y=agri_gdp), color="darkgreen", linetype = "dashed") + 
+  geom_line( aes(y=total_cy/ coeff), size = 2, color="lightgreen")  +
+  scale_y_continuous(
+    name = "Agricultural GDP in Billions USD",
+    label = scales::unit_format(unit = "B", scale = 1e-6, sep = ""),
+    sec.axis = sec_axis(~.*coeff, name="Total State Corn Crop Yields in Corn Bushels per Acre")
+  )+
+  labs(
+    title = "North Dakota Agricultural GDP and Corn Crop Yields", 
+    subtitle = "In the past 20 years, corn yields have been steady and agricultural GDP is increasing."
+  )+ 
+  annotate("text", label = "Corn Crop Yields", x = 2004, y = 5.5*1000000)+ 
+  annotate("text", label = "Agricultural GDP", x = 2004, y = 2.6*1000000)
+g4
 
 ## ----------------
 ## Use GGally package to make correlatoin plots 
 # Southern
-south_full <- do.call("rbind", list(OK_full, TX_full, AR_full, TN_full))
-                      
-cov_dat_south <- south_full%>%
+cov_dat_south <- south_early%>%
   select(c(state, year, agri_gdp, total_cy, adj_prod_usd, rel_crop_output))
 
 cov_plt_south<- ggpairs(cov_dat_south, columns = 2:6, ggplot2::aes(color= state))
@@ -129,9 +223,7 @@ ggsave(path = "./figs/final", filename = "cov_south_plot.png")
 ## ----------------
 # Northern
 
-north_full <- do.call("rbind", list(WI_full, MN_full, MT_full, ND_full, SD_full))
-
-cov_dat_north <- north_full%>%
+cov_dat_north <- north_early%>%
   select(c(state, year, agri_gdp, total_cy, adj_prod_usd, rel_crop_output))
 
 cov_plt_north <- ggpairs(cov_dat_north, columns = 2:6, ggplot2::aes(color= state))
@@ -140,9 +232,9 @@ ggsave(path = "./figs/final", filename = "cov_north_plot.png")
 
 ## ----------------
 # For Regions
-north_south_full <- rbind(north_full, south_full)
+north_south_early <- rbind(north_early, south_early)
 
-cov_dat <- north_south_full%>%
+cov_dat <- north_south_early%>%
   select(c(state, region, year, agri_gdp, total_cy, adj_prod_usd, rel_crop_output))
 
 cov_plt <- ggpairs(cov_dat, columns = 2:7, ggplot2::aes(color= region))
@@ -153,7 +245,7 @@ ggsave(path = "./figs/final", filename = "cov_regions_plot.png")
 ## ----------------
 # Plot Heat map of change in % gdp
 
-g4 <- ggplot(filter(gdp, region != "mid"), aes(x= year, y = perc_agri_gdp))+
+g4 <- ggplot(filter(north_south_early, region != "mid"), aes(x= year, y = perc_agri_gdp))+
   geom_smooth(aes(color = state))+
   facet_grid(~region)+
   scale_y_continuous(labels = scales::percent)+
