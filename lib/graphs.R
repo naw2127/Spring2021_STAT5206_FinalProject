@@ -49,9 +49,12 @@ gdp_raw_perc_SIC <- ggplot(no_mid_SIC,
        y = "Percent of GDP based on agriculture")
   
 ggplot(no_mid_NAICS, aes(x = year, y = agri_gdp, group = state, color = state)) +
-  facet_wrap(~region) + geom_smooth() + theme(legend.position = "bottom") +
-  labs(title = "GDP from agriculture has been taking a nosedive since 2013",
-       y = "raw GDP from agriculture (millions of USD)")
+  geom_line()+
+  scale_y_continuous(label = scales::unit_format(unit = "B", scale = 1e-6, sep = ""),
+  )+
+  facet_wrap(~region) + geom_smooth(method = "lm") + theme(legend.position = "bottom") +
+  labs(title = str_wrap("Northern States and Texas see positive trends while southern states are stagnant or slightly decreasing", width = 70),
+       y = "Raw GDP from Agriculture USD")
 
 ag_output_1960_2004 <- read_csv("./output/total_agricultural_output_1960_2004.csv")
 

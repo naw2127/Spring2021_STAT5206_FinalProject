@@ -39,7 +39,7 @@ midwest_rel_output <- read_csv("./output/total_agricultural_output_1960_2004.csv
 
 png("./figs/final/regions_map.png")  # for saving
 p2 <- plot_usmap(data = midwest_stats, values = "region", color = "white")+ 
-  scale_fill_manual(values = c(`north` = "lightgreen", `mid` = "green", `south` = "yellow"),
+  scale_fill_manual(values = c(`north` = "green", `mid` = "grey55", `south` = "yellow"),
                     name = "Region", na.value="lightgray") +
   theme(legend.position = "right")
 
@@ -129,7 +129,7 @@ g3 <- ggplot(g3_dat, aes(y = total, x = year,color = state))+
   facet_wrap(~region)+
   labs(
     title = "Northern States see more consistent upward trends than southern states", 
-    y = "Total Crop Yields in Thousands Bushels per Acre"
+    y = "Total Corn Crop Yields in Thousands Bushels per Acre"
   )
 
 g3
@@ -144,7 +144,7 @@ g4 <- ggplot(g3_dat, aes(y = total, x = year, color = state))+
   facet_wrap(~region)+
   labs(
     title = "Northern States see more consistent upward trends than southern states", 
-    y = "Total Crop Yields in Thousands Bushels per Acre"
+    y = "Total Corn Crop Yields in Thousands Bushels per Acre"
   )
 
 g4
@@ -208,13 +208,15 @@ g7
 ## graph of rel crop outputs
 
 g8 <- ggplot(midwest_rel_output, aes(x = year, y = rel_crop_output))+
-  geom_line(aes(group = state, color = region), linetype = "dashed")+
-  geom_smooth(aes(color = region), size = 2)+
+  geom_line(aes(group = state, color = region), size= 1., linetype = "dashed")+
+  geom_smooth(method = "lm", aes(color = region), size = 2)+
   labs(
     title = "Total Crop Output relative to 1996 Alabama",
     subtitle = "Northern states over take southern states in 1972",
     y = "Crop Output relative to 1996 Alabama"
-  )
+  )+
+  annotate("text", label = "Minnesota", x = 1990, y = 7)+
+  annotate("text", label = "Texas", x = 1965, y = 5) 
 
 g8
 
