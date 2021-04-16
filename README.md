@@ -60,6 +60,15 @@ This analysis has **many** limitations.
 4. Finally, there are a considerable amount of confounding variables and general variability in this analysis. Weather events like El Niño generally result in warmer temperatures across the country--an effect that has greater potential to negatively impact the warmer southern states. 
 5. Projected crop prices, weather, climate change, availability of resources and government policy are also some factors that affect corn and soybean production and these factors likely interact, thus determining causal relationships is beyond the scope of this paper.
 
+```
+proj/
+├── lib/
+├── data/
+├── doc/
+├── figs/
+└── output/
+```
+
 - - - -
 *Written on April 16, 2021*
 Author Contact Information: 
